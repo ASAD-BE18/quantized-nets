@@ -19,12 +19,14 @@ from keras.callbacks import ModelCheckpoint
 from quantize.quantized_layers import QuantizedConv2D, QuantizedDense
 from quantize.quantized_ops import quantized_relu as quantized_relu_op
 from quantize.quantized_ops import quantized_tanh as quantized_tanh_op
-import mnist_data
 import math
 from argparse import ArgumentParser
 import tensorflow as tf
 
-from keras.datasets import cifar10, fashion_mnist
+from keras.datasets import cifar10, fashion_mnist, mnist
+
+# Load MNIST data
+(x_train_mnist, y_train_mnist), (x_test_mnist, y_test_mnist) = mnist.load_data()
 
 # Load CIFAR10 data
 (x_train_cifar10, y_train_cifar10), (x_test_cifar10, y_test_cifar10) = cifar10.load_data()
@@ -43,6 +45,14 @@ x_train_fashion = x_train_fashion.astype('float32') / 255
 x_test_fashion = x_test_fashion.astype('float32') / 255
 y_train_fashion = to_categorical(y_train_fashion, 10)
 y_test_fashion = to_categorical(y_test_fashion, 10)
+
+# Preprocess MNIST data
+x_train_mnist = x_train_mnist.astype('float32') / 255
+x_test_mnist = x_test_mnist.astype('float32') / 255
+y_train_mnist = to_categorical(y_train_mnist, 10)
+y_test_mnist = to_categorical(y_test_mnist, 10)
+
+
 
 
 parser = ArgumentParser()
@@ -171,9 +181,10 @@ model.summary()
 
 # ------------- MNIST Unpack and Augment Code------------
 
-train_total_data, train_size, test_data, test_labels = mnist_data.prepare_MNIST_data(False)
-train_data = train_total_data[:, :-10]
-train_labels = train_total_data[:, -10:]
+train_data = x_train_mnist
+train_labels = y_train_mnist
+test_data = x_test_mnist
+test_labels = y_test_mnist
 
 x = [train_data, train_labels, test_data, test_labels]
 x_train, y_train, x_test, y_test = mnist_process(x)
@@ -267,4 +278,3 @@ print('Fashion MNIST Test precision:', score[2])
 print('Fashion MNIST Test recall:', score[3])
 print('Fashion MNIST Test F1:', score[4])
 # ---------------------------------------
-
