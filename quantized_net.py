@@ -22,6 +22,11 @@ from quantize.quantized_ops import quantized_tanh as quantized_tanh_op
 import math
 from argparse import ArgumentParser
 import tensorflow as tf
+from keras.callbacks import EarlyStopping
+
+# Define early stopping
+early_stopping = EarlyStopping(monitor='val_loss', patience=10)
+
 
 from keras.datasets import cifar10, fashion_mnist, mnist
 
@@ -205,7 +210,7 @@ history = model.fit(x_train, y_train,
                     callbacks=[lr_scheduler, ModelCheckpoint('temp_network.h5',
                                                  monitor='val_acc', verbose=1,
                                                  save_best_only=True,
-                                                 save_weights_only=True)])
+                                                 save_weights_only=True), early_stopping])
 score = model.evaluate(x_test, y_test, verbose=1)
 print('MNIST Test losss:', score[0])
 print('MNIST Test accuracy:', score[1])
@@ -238,7 +243,7 @@ history = model.fit(x_train, y_train,
                     callbacks=[lr_scheduler, ModelCheckpoint('temp_network.h5',
                                                  monitor='val_acc', verbose=1,
                                                  save_best_only=True,
-                                                 save_weights_only=True)])
+                                                 save_weights_only=True), early_stopping])
 score = model.evaluate(x_test, y_test, verbose=1)
 print('CIFAR10 Test losss:', score[0])
 print('CIFAR10 Test accuracy:', score[1])
@@ -270,7 +275,7 @@ history = model.fit(x_train, y_train,
                     callbacks=[lr_scheduler, ModelCheckpoint('temp_network.h5',
                                                  monitor='val_acc', verbose=1,
                                                  save_best_only=True,
-                                                 save_weights_only=True)])
+                                                 save_weights_only=True), early_stopping])
 score = model.evaluate(x_test, y_test, verbose=1)
 print('Fashion MNIST Test losss:', score[0])
 print('Fashion MNIST Test accuracy:', score[1])
