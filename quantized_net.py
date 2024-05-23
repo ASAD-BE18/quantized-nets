@@ -13,7 +13,7 @@ from keras.layers import Dense, Dropout, Activation, BatchNormalization, MaxPool
 from keras.layers import Flatten
 from keras.optimizers import SGD, Adam, RMSprop
 from keras.callbacks import LearningRateScheduler, Callback
-from keras.utils import np_utils
+from keras.utils import to_categorical
 from keras.activations import relu
 from keras.callbacks import ModelCheckpoint
 from quantize.quantized_layers import QuantizedConv2D, QuantizedDense
@@ -35,14 +35,14 @@ from keras.datasets import cifar10, fashion_mnist
 # Preprocess CIFAR10 data
 x_train_cifar10 = x_train_cifar10.astype('float32') / 255
 x_test_cifar10 = x_test_cifar10.astype('float32') / 255
-y_train_cifar10 = np_utils.to_categorical(y_train_cifar10, 10)
-y_test_cifar10 = np_utils.to_categorical(y_test_cifar10, 10)
+y_train_cifar10 = to_categorical(y_train_cifar10, 10)
+y_test_cifar10 = to_categorical(y_test_cifar10, 10)
 
 # Preprocess Fashion MNIST data
 x_train_fashion = x_train_fashion.astype('float32') / 255
 x_test_fashion = x_test_fashion.astype('float32') / 255
-y_train_fashion = np_utils.to_categorical(y_train_fashion, 10)
-y_test_fashion = np_utils.to_categorical(y_test_fashion, 10)
+y_train_fashion = to_categorical(y_train_fashion, 10)
+y_test_fashion = to_categorical(y_test_fashion, 10)
 
 
 parser = ArgumentParser()
