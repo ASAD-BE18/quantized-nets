@@ -27,12 +27,12 @@ VALIDATION_SIZE = 5000  # Size of the validation set.
 # Download MNIST data
 def maybe_download(filename):
     """Download the data from Yann's website, unless it's already here."""
-    if not tf.gfile.Exists(DATA_DIRECTORY):
-        tf.gfile.MakeDirs(DATA_DIRECTORY)
+    if not tf.io.gfile.Exists(DATA_DIRECTORY):
+        tf.io.gfile.MakeDirs(DATA_DIRECTORY)
     filepath = os.path.join(DATA_DIRECTORY, filename)
-    if not tf.gfile.Exists(filepath):
+    if not tf.io.gfile.Exists(filepath):
         filepath, _ = urllib.request.urlretrieve(SOURCE_URL + filename, filepath)
-        with tf.gfile.GFile(filepath) as f:
+        with tf.io.gfile.GFile(filepath) as f:
             size = f.size()
         print('Successfully downloaded', filename, size, 'bytes.')
     return filepath
