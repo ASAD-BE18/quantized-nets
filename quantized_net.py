@@ -22,7 +22,27 @@ from quantize.quantized_ops import quantized_tanh as quantized_tanh_op
 import mnist_data
 import math
 from argparse import ArgumentParser
+import tensorflow as tf
 
+from keras.datasets import cifar10, fashion_mnist
+
+# Load CIFAR10 data
+(x_train_cifar10, y_train_cifar10), (x_test_cifar10, y_test_cifar10) = cifar10.load_data()
+
+# Load Fashion MNIST data
+(x_train_fashion, y_train_fashion), (x_test_fashion, y_test_fashion) = fashion_mnist.load_data()
+
+# Preprocess CIFAR10 data
+x_train_cifar10 = x_train_cifar10.astype('float32') / 255
+x_test_cifar10 = x_test_cifar10.astype('float32') / 255
+y_train_cifar10 = np_utils.to_categorical(y_train_cifar10, 10)
+y_test_cifar10 = np_utils.to_categorical(y_test_cifar10, 10)
+
+# Preprocess Fashion MNIST data
+x_train_fashion = x_train_fashion.astype('float32') / 255
+x_test_fashion = x_test_fashion.astype('float32') / 255
+y_train_fashion = np_utils.to_categorical(y_train_fashion, 10)
+y_test_fashion = np_utils.to_categorical(y_test_fashion, 10)
 
 
 parser = ArgumentParser()
@@ -37,6 +57,18 @@ def mnist_process(x):
 		if(len(x[j][0]) == 784):
 			x[j] = np.reshape(x[j], [-1, 28, 28, 1])
 	return x
+
+def cifar10_process(x):
+    for j in range(len(x)):
+        x[j] = x[j]*2-1
+    return x
+
+def fashion_mnist_process(x):
+    for j in range(len(x)):
+        x[j] = x[j]*2-1
+        if(len(x[j][0]) == 784):
+            x[j] = np.reshape(x[j], [-1, 28, 28, 1])
+    return x
 
 
 class TestCallback(Callback):
@@ -125,7 +157,12 @@ model.add(QuantizedDense(classes, H=H, kernel_lr_multiplier=kernel_lr_multiplier
 model.add(BatchNormalization(epsilon=epsilon, momentum=momentum, name='bn6'))
 
 opt = Adam(lr=lr_start) 
-model.compile(loss='squared_hinge', optimizer=opt, metrics=['acc'])
+model.compile(loss='squared_hinge', optimizer=opt, metrics=[
+        'acc',
+        tf.keras.metrics.Precision(name='precision'),
+        tf.keras.metrics.Recall(name='recall'),
+        tf.keras.metrics.AUC(curve='PR', name='auc_pr')  # AUC of the PR curve is equivalent to the F1 score
+    ])
 model.summary()
 
 # ---------------------------------
@@ -159,7 +196,75 @@ history = model.fit(x_train, y_train,
                                                  save_best_only=True,
                                                  save_weights_only=True)])
 score = model.evaluate(x_test, y_test, verbose=1)
-print('Test score:', score[0])
-print('Test accuracy:', score[1])
-
+print('MNIST Test losss:', score[0])
+print('MNIST Test accuracy:', score[1])
+print('MNIST Test precision:', score[2])
+print('MNIST Test recall:', score[3])
+print('MNIST Test F1:', score[4])
 # ---------------------------------------
+
+
+# ------------- CIFAR10 Unpack and Augment Code------------
+train_data = x_train_cifar10
+train_labels = y_train_cifar10
+test_data = x_test_cifar10
+test_labels = y_test_cifar10
+
+x = [train_data, train_labels, test_data, test_labels]
+x_train, y_train, x_test, y_test = cifar10_process(x)
+
+print("X train: ", x_train.shape)
+print("Y train: ", y_train.shape)
+
+# --------------------------------------------------------
+
+# -------- Train Loop----------------------
+
+lr_scheduler = LearningRateScheduler(lambda e: lr_start * lr_decay ** e)
+history = model.fit(x_train, y_train,
+                    batch_size=batch_size, epochs=epochs,
+                    verbose=1, validation_data=(x_test, y_test),
+                    callbacks=[lr_scheduler, ModelCheckpoint('temp_network.h5',
+                                                 monitor='val_acc', verbose=1,
+                                                 save_best_only=True,
+                                                 save_weights_only=True)])
+score = model.evaluate(x_test, y_test, verbose=1)
+print('CIFAR10 Test losss:', score[0])
+print('CIFAR10 Test accuracy:', score[1])
+print('CIFAR10 Test precision:', score[2])
+print('CIFAR10 Test recall:', score[3])
+print('CIFAR10 Test F1:', score[4])
+# ---------------------------------------
+
+# ------------- Fashion MNIST Unpack and Augment Code------------
+train_data = x_train_fashion
+train_labels = y_train_fashion
+test_data = x_test_fashion
+test_labels = y_test_fashion
+
+x = [train_data, train_labels, test_data, test_labels]
+x_train, y_train, x_test, y_test = fashion_mnist_process(x)
+
+print("X train: ", x_train.shape)
+print("Y train: ", y_train.shape)
+
+# --------------------------------------------------------
+
+# -------- Train Loop----------------------
+
+lr_scheduler = LearningRateScheduler(lambda e: lr_start * lr_decay ** e)
+history = model.fit(x_train, y_train,
+                    batch_size=batch_size, epochs=epochs,
+                    verbose=1, validation_data=(x_test, y_test),
+                    callbacks=[lr_scheduler, ModelCheckpoint('temp_network.h5',
+                                                 monitor='val_acc', verbose=1,
+                                                 save_best_only=True,
+                                                 save_weights_only=True)])
+score = model.evaluate(x_test, y_test, verbose=1)
+print('Fashion MNIST Test losss:', score[0])
+print('Fashion MNIST Test accuracy:', score[1])
+print('Fashion MNIST Test precision:', score[2])
+print('Fashion MNIST Test recall:', score[3])
+print('Fashion MNIST Test F1:', score[4])
+# ---------------------------------------
+
